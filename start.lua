@@ -35,6 +35,9 @@ local retryButton					-- Retry button
 local levelFailedText
 local targetX = display.contentCenterX
 local targetY = 100
+local nextLevelButton
+local hitText
+local levelText
 
 -- Obstacles
 local o1									-- Obstacle 1
@@ -92,7 +95,7 @@ end
 
 -- Display level
 local function displayLevel( scene )
-	local levelText = display.newText( "Level: " .. level, 30, 20 )
+	levelText = display.newText( "Level: " .. level, 30, 20 )
 	levelText.anchorX = 0
 end
 
@@ -133,6 +136,8 @@ local function resetObjects()
 	display.remove( bg )
 	display.remove( nextLevelButton )
 	display.remove( levelText )
+	display.remove( nextLevelButton )
+	display.remove( hitText )
 
 	--physics.stop()
 end
@@ -171,7 +176,7 @@ end
 
 -- Dragging the ball
 local function dragBall( event )
-	local ball = event.target
+  local ball = event.target
 	local phase = event.phase
 
 	if ( phase == "began" ) then
@@ -222,8 +227,8 @@ end
 
 -- Show hit message
 local function hasHit()
-	local hitText = display.newText( "HIT!!!", display.contentCenterX, display.contentCenterY, native.systemFont, 44 )
-	local nextLevelButton = display.newText( "Level 2 >>", display.contentCenterX, display.contentCenterY+22+10+12, native.systemFont, 22 )
+	hitText = display.newText( "HIT!!!", display.contentCenterX, display.contentCenterY, native.systemFont, 44 )
+	nextLevelButton = display.newText( "Level 2 >>", display.contentCenterX, display.contentCenterY+22+10+12, native.systemFont, 22 )
 	nextLevelButton:setFillColor(0, 1, 0)
 
 	-- Add event listener
