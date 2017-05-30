@@ -42,6 +42,10 @@ local destY                             -- Stretch direction
 local gameTimer = {}
 local timeLimit = 4000		-- Limit of time before game over
 local hit = false
+local scWidth = display.contentWidth
+local scHeight = display.contentHeight
+local centerX = display.contentCenterX
+local centerY = display.contentCenterY
 
 -- *************************
 --  Functions
@@ -49,19 +53,21 @@ local hit = false
 
 -- Set Flooring
 local function setFlooring()
-  flooring = display.newRect( display.contentCenterX, display.contentHeight+5, display.contentWidth, 10 )
+  flooring = display.newRect( centerX, display.contentHeight+5, scWidth, 10 )
   physics.addBody( flooring, "static", {friction=frictionValue, bounce=0.5} )
 end
 -- Set Ceiling
 local function setCeiling()
-  ceiling = display.newRect( display.contentCenterX, -5, display.contentWidth, 10 )
+  ceiling = display.newRect( centerX, -5, scWidth, 10 )
   physics.addBody( ceiling, "static", {friction=frictionValue, bounce=0.5} )
 end
 -- Set Walls
 local function setWalls()
-  wallLeft = display.newRect( 20, display.contentCenterY, 10, display.contentHeight )
+  wallLeft = display.newRect( -5, centerY, 10, scHeight )
+  wallLeft:setFillColor(0)
 
-  wallRight = display.newRect( display.contentWidth-20, display.contentCenterY, 10, display.contentHeight )
+  wallRight = display.newRect( scWidth, centerY, 10, scHeight )
+  wallRight:setFillColor(0)
 
   physics.addBody( wallLeft, "static", {friction=frictionValue, bounce=0.5} )
   physics.addBody( wallRight, "static", {friction=frictionValue, bounce=0.5} )
@@ -69,20 +75,28 @@ end
 
 -- Show ball
 local function showBall()
-  ball = display.newCircle( origX, origY, 15 )
-  physics.addBody( ball, "dynamic", {density=2, friction=frictionValue, bounce=0.5, radius=15} )
-  ball:setFillColor(0,0,.2)
-  ball.myName = "ball"
+  origX = centerX
+  origY = scHeight*.8
+  
+  local radius = scWidth*0.05
+  
+	ball = display.newCircle( origX, origY, radius )
+	ball:setFillColor( 0, 0, 0 )
+	physics.addBody( ball, "dynamic", {density=2, radius=radius, bounce=0.5, 	friction=frictionValue} )
+	ball.myName = "ball"
 end
 
 -- Show target
 local function showTarget()
-  target = display.newCircle( display.contentWidth-60, 40, 30 )
-  physics.addBody( target, "static", {radius=30, friction=frictionValue} )
-  target:setFillColor( 1, 0, 0 )
-  target.myName = "target"
+  local radius = scWidth*0.1
+	target = display.newCircle( centerX, scHeight*.2, radius )
+	target:setFillColor( 1, 0, 0 )
+
+	physics.addBody( target, "static", {radius=radius, density=3} )
+	target.myName = "target"
 end
 
+-- Show Obstacles
 -- Show Obstacles
 local function showObstacles()
   
@@ -113,6 +127,12 @@ end
 
 -- Reset objects
 local function resetObjects()
+
+	--physics.start()
+	--physics.removeBody( ball )
+	--physics.removeBody( target )
+	--physics.removeBody( o1 )
+
 	-- Remove objects
 	display.remove( levelFailedText )
 	display.remove( retryButton )
@@ -134,15 +154,17 @@ end
 local function resetLevel()
 	resetObjects()
   composer.setVariable( "level", level )
-	composer.gotoScene( "redirects.backlevel"..level )
+	composer.gotoScene( "redirects.backlevel" )
 end
 
 -- Trial failed, show failure message and retry button
 local function levelFailed()
-	levelFailedText = display.newText( "Level Failed!", display.contentCenterX, display.contentCenterY, native.systemFont, 44 )
+	local levelFailedTextHeight = scHeight*0.1
+	levelFailedText = display.newText( "Level Failed!", display.contentCenterX, display.contentCenterY, native.systemFont, levelFailedTextHeight )
   levelFailedText:setFillColor( 1, 0, 0 )
 
-	retryButton = display.newText( "| Retry |", display.contentCenterX, display.contentCenterY + 22 + 16 + 20, native.systemFont, 18 )
+  local retryButtonTextHeight = scHeight*0.05
+	retryButton = display.newText( "| Retry |", display.contentCenterX, display.contentCenterY + 22 + 16 + 20, native.systemFont, retryButtonTextHeight )
   retryButton:setFillColor( 1, 0, 0 )
 
 	retryButton:addEventListener( "tap", resetLevel )
@@ -220,10 +242,12 @@ end
 
 -- Show hit message
 local function hasHit()
-	hitText = display.newText( "HIT!!!", display.contentCenterX, display.contentCenterY, native.systemFont, 44 )
+  local hitTextHeight = scHeight*0.1
+	hitText = display.newText( "HIT!!!", centerX, centerY, native.systemFont, hitTextHeight )
   hitText:setFillColor( 0, 0, 1 )
-	--nextLevelButton = display.newText( "Level 2 >>", display.contentCenterX, display.contentCenterY+22+10+12, native.systemFont, 22 )
-  nextLevelButton = display.newImageRect( "img/next.png", 80, 20 )
+	
+  local nextLevelButtonHeight = hitTextHeight*0.5
+  nextLevelButton = display.newImageRect( "img/next.png", nextLevelButtonHeight*4, nextLevelButtonHeight )
   nextLevelButton.x = display.contentCenterX
   nextLevelButton.y = display.contentCenterY+22+10+12
 	nextLevelButton:setFillColor(0, 1, 0)

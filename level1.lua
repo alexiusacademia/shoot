@@ -41,6 +41,11 @@ local nextLevelButton
 local hitText
 local levelText
 
+local scWidth = display.contentWidth
+local scHeight = display.contentHeight
+local centerX = display.contentCenterX
+local centerY = display.contentCenterY
+
 -- Obstacles
 local o1									-- Obstacle 1
 
@@ -53,45 +58,42 @@ end
 
 -- Function to load and display ball
 local function displayBall( scene )
-	ball = display.newCircle( origX, origY, 15 )
-	ball:setFillColor( 0, 0, 1 )
+  origX = centerX
+  origY = scHeight*.8
+  local radius = scWidth*0.05
+	ball = display.newCircle( origX, origY, radius )
+	ball:setFillColor( 0, 0, 0 )
 	--ball.x = origX
 	--ball.y = origY
-	physics.addBody( ball, "dynamic", {density=2, radius=15, bounce=0.5, 	friction=objFriction} )
+	physics.addBody( ball, "dynamic", {density=2, radius=radius, bounce=0.5, 	friction=objFriction} )
 	ball.myName = "ball"
 end
 
 -- Load platform
 local function displayPlatform( scene )
-	platform = display.newImageRect( scene, "img/platform.png", 320, 22 )
-	platform.x = display.contentCenterX
-	platform.y = display.contentHeight+11
+  platform = display.newRect( centerX, scHeight+5, scWidth, 10 )
+  platform:setFillColor(0)
 	physics.addBody( platform, "static", { friction=objFriction, bounce=0.3 } )
 end
 
 -- Load wall left
 local function displayWall1( scene )
-	wall1 = display.newImageRect( scene, "img/wall.png", 10, 480 )
-	wall1.anchorX = 1
-	wall1.x = 25
-	wall1.y = display.contentCenterY
+	wall1 = display.newRect( scene, -5, centerY, 10, scHeight )
+  wall1:setFillColor(0)
 	physics.addBody( wall1, "static", { friction=objFriction, bounce=0.3 } )
 end
 
 -- Load wall right
 local function displayWall2( scene )
-	wall2 = display.newImageRect( scene, "img/wall.png", 10, 480 )
-	wall2.anchorX = 0
-	wall2.x = display.contentWidth-25
-	wall2.y = display.contentCenterY
+	wall2 = display.newRect( scene, scWidth+5, centerY, 10, scHeight )
+  wall2:setFillColor(0)
 	physics.addBody( wall2, "static", { friction=objFriction, bounce=0.3 } )
 end
 
 -- Load ceiling
 local function displayCeiling( scene )
-	ceiling = display.newImageRect( scene, "img/platform.png", 320, 22 )
-	ceiling.x = display.contentCenterX
-	ceiling.y = -11
+	ceiling = display.newRect( scene, centerX, -5, scWidth, 10 )
+  ceiling:setFillColor(0)
 	physics.addBody( ceiling, "static", { friction=objFriction, bounce=0.3 } )
 end
 
@@ -104,32 +106,24 @@ end
 
 -- Load target
 local function displayTarget( scene )
-	target = display.newCircle( display.contentCenterX, 100, 30 )
+  local radius = scWidth*0.1
+	target = display.newCircle( centerX, scHeight*.2, radius )
 	target:setFillColor( 1, 0, 0 )
 
-	physics.addBody( target, "static", {radius=30, density=3} )
+	physics.addBody( target, "static", {radius=radius, density=3} )
 	target.myName = "target"
 end
 
 -- Create obstacles
 local function displayObstacles( scene )
-	-- Create polygon vertices
-	local vertices = {0, -30, 30, 0, 0, 30, -30, 0}
-
 	-- Create obstacle 1
-  o1 = display.newRect( display.contentCenterX, display.contentCenterY, display.contentWidth*0.2, 10 )
+  o1 = display.newRect( centerX, centerY, display.contentWidth*0.5, 10 )
   o1:setFillColor(0.5)
   physics.addBody( o1, "static", {friction=objFriction} )
 end
 
 -- Reset objects
 local function resetObjects()
-
-	--physics.start()
-	--physics.removeBody( ball )
-	--physics.removeBody( target )
-	--physics.removeBody( o1 )
-
 	-- Remove objects
 	display.remove( levelFailedText )
 	display.remove( retryButton )
@@ -154,10 +148,12 @@ end
 
 -- Trial failed, show failure message and retry button
 local function levelFailed()
-	levelFailedText = display.newText( "Level Failed!", display.contentCenterX, display.contentCenterY, native.systemFont, 44 )
+  local levelFailedTextHeight = scHeight*0.1
+	levelFailedText = display.newText( "Level Failed!", display.contentCenterX, display.contentCenterY, native.systemFont, levelFailedTextHeight )
   levelFailedText:setFillColor( 1, 0, 0 )
 
-	retryButton = display.newText( "| Retry |", display.contentCenterX, display.contentCenterY + 22 + 16 + 20, native.systemFont, 18 )
+  local retryButtonTextHeight = scHeight*0.05
+	retryButton = display.newText( "| Retry |", display.contentCenterX, display.contentCenterY + 22 + 16 + 20, native.systemFont, retryButtonTextHeight )
   retryButton:setFillColor( 1, 0, 0 )
 
 	retryButton:addEventListener( "tap", resetLevel )
@@ -233,10 +229,12 @@ end
 
 -- Show hit message
 local function hasHit()
-	hitText = display.newText( "HIT!!!", display.contentCenterX, display.contentCenterY, native.systemFont, 44 )
+  local hitTextHeight = scHeight*0.1
+	hitText = display.newText( "HIT!!!", display.contentCenterX, display.contentCenterY, native.systemFont, hitTextHeight )
   hitText:setFillColor( 0, 0, 1 )
 	
-  nextLevelButton = display.newImageRect( "img/next.png", 80, 20 )
+  local nextLevelButtonHeight = hitTextHeight*0.5
+  nextLevelButton = display.newImageRect( "img/next.png", nextLevelButtonHeight*4, nextLevelButtonHeight )
   nextLevelButton.x = display.contentCenterX
   nextLevelButton.y = display.contentCenterY+22+10+12
 	nextLevelButton:setFillColor(0, 1, 0)

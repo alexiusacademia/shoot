@@ -28,12 +28,13 @@ local wallRight
 local obs1
 local obs2
 local obs3
+local obs4
 -- 2] Texts
 local levelText
 local levelFailedText
 local retryButton
 -- 3] Variables
-local level = 7
+local level = 9
 local frictionValue = 0.8
 local origX = display.contentCenterX
 local origY = display.contentHeight-100
@@ -99,27 +100,24 @@ end
 -- Show Obstacles
 local function showObstacles()
   
-  local obstacleWidth = display.contentWidth * 0.5
+  local obstacleWidth = display.contentWidth * 0.3
   local obstacleHeight = 10
+  local paint = { 0.5 }
+  local centerX = display.contentCenterX
+  local centerY = display.contentCenterY
   
-  obs1 = display.newRect( display.contentCenterX, display.contentCenterY+90, obstacleWidth, obstacleHeight )
-  obs1:setFillColor(0.5)
+  obs1 = display.newCircle( centerX+obstacleWidth/2, centerY, obstacleWidth/2 )
+  obs1.stroke = paint
+  obs1.strokeWidth = 4
   
-  obs2 = display.newRect( display.contentWidth-30, display.contentHeight-50, obstacleWidth, obstacleHeight )
-  obs2:setFillColor(0.5)
-  obs2.anchorX = 0
-  obs2.anchorY = 1
-  obs2.rotation = 135
-  
-  obs3 = display.newRect( 20, display.contentHeight-50, obstacleWidth, obstacleHeight )
-  obs3:setFillColor(0.5)
-  obs3.anchorX = 0
-  obs3.anchorY = 1
-  obs3.rotation = 45
+  obs2 = display.newCircle( centerX-obstacleWidth/2, centerY, obstacleWidth/2 )
+  obs2.stroke = paint
+  obs2.strokeWidth = 4
 
-  physics.addBody( obs1, "static", {friction=frictionValue} )
-  physics.addBody( obs2, "static", {friction=frictionValue} )
-  physics.addBody( obs3, "static", {friction=frictionValue} )
+  physics.addBody( obs1, "dynamic", {density=2, friction=frictionValue, radius=obstacleWidth/2} )
+  physics.addBody( obs2, "dynamic", {density=2, friction=frictionValue, radius=obstacleWidth/2} )
+  --physics.addBody( obs3, "static", {friction=frictionValue} )
+  --physics.addBody( obs4, "dynamic", {friction=frictionValue, density=1.1, radius=40} )
 end
 
 -- Show level
@@ -145,6 +143,7 @@ local function resetObjects()
 	display.remove( obs1 )
   display.remove( obs2 )
   display.remove( obs3 )
+  display.remove( obs4 )
 	display.remove( bg )
 	display.remove( nextLevelButton )
 	display.remove( levelText )
