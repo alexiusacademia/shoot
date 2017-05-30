@@ -27,12 +27,13 @@ local wallLeft
 local wallRight
 local obs1
 local obs2
+local obs3
 -- 2] Texts
 local levelText
 local levelFailedText
 local retryButton
 -- 3] Variables
-local level = 2
+local level = 3
 local frictionValue = 0.8
 local origX = display.contentCenterX
 local origY = display.contentHeight-100
@@ -76,7 +77,7 @@ end
 
 -- Show target
 local function showTarget()
-  target = display.newCircle( display.contentWidth-100, 100, 30 )
+  target = display.newCircle( display.contentWidth-60, 40, 30 )
   physics.addBody( target, "static", {radius=30, friction=frictionValue} )
   target:setFillColor( 1, 0, 0 )
   target.myName = "target"
@@ -84,10 +85,23 @@ end
 
 -- Show Obstacles
 local function showObstacles()
-  obs1 = display.newRect( display.contentCenterX+50, display.contentCenterY, display.contentWidth*0.2, 10 )
+  
+  local obstacleWidth = display.contentWidth * 0.2
+  local obstacleHeight = 10
+  
+  obs1 = display.newRect( display.contentCenterX, display.contentCenterY, obstacleWidth, obstacleHeight )
   obs1:setFillColor(0.5)
+  
+  obs2 = display.newRect( display.contentWidth-obstacleWidth, display.contentCenterY-50, obstacleWidth, obstacleHeight )
+  obs2:setFillColor(0.5)
+  
+  obs3 = display.newRect( obstacleWidth, display.contentCenterY/2+50, obstacleWidth, obstacleHeight )
+  obs3.anchorX = 0
+  obs3:setFillColor(0.5)
 
   physics.addBody( obs1, "static", {friction=frictionValue} )
+  physics.addBody( obs2, "static", {friction=frictionValue} )
+  physics.addBody( obs3, "static", {friction=frictionValue} )
 end
 
 -- Show level
@@ -99,18 +113,14 @@ end
 
 -- Reset objects
 local function resetObjects()
-
-	--physics.start()
-	--physics.removeBody( ball )
-	--physics.removeBody( target )
-	--physics.removeBody( o1 )
-
 	-- Remove objects
 	display.remove( levelFailedText )
 	display.remove( retryButton )
 	display.remove( ball )
 	display.remove( target )
 	display.remove( obs1 )
+  display.remove( obs2 )
+  display.remove( obs3 )
 	display.remove( bg )
 	display.remove( nextLevelButton )
 	display.remove( levelText )
@@ -124,7 +134,7 @@ end
 local function resetLevel()
 	resetObjects()
   composer.setVariable( "level", level )
-	composer.gotoScene( "redirects.backlevel" )
+	composer.gotoScene( "redirects.backlevel"..level )
 end
 
 -- Trial failed, show failure message and retry button
@@ -205,7 +215,7 @@ end
 -- Go to next level
 local function nextLevel()
 	resetObjects()
-	composer.gotoScene( "level3", {timer=800, effect="crossFade"} )
+	composer.gotoScene( "level"..level+1, {timer=800, effect="crossFade"} )
 end
 
 -- Show hit message
