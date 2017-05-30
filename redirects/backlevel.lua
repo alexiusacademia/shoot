@@ -34,7 +34,8 @@ function scene:show( event )
 
 	elseif ( phase == "did" ) then
 		-- Code here runs when the scene is entirely on screen
-    composer.gotoScene( "start" )
+    local level = composer.getVariable( "level" )
+    composer.gotoScene( "level"..level )
 	end
 end
 

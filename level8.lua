@@ -27,12 +27,14 @@ local wallLeft
 local wallRight
 local obs1
 local obs2
+local obs3
+local obs4
 -- 2] Texts
 local levelText
 local levelFailedText
 local retryButton
 -- 3] Variables
-local level = 2
+local level = 8
 local frictionValue = 0.8
 local origX = display.contentCenterX
 local origY = display.contentHeight-100
@@ -97,10 +99,36 @@ end
 
 -- Show Obstacles
 local function showObstacles()
-  obs1 = display.newRect( display.contentCenterX+50, display.contentCenterY, display.contentWidth*0.4, 10 )
+  
+  local obstacleWidth = display.contentWidth * 0.4
+  local obstacleHeight = 10
+  
+  obs1 = display.newRect( display.contentCenterX, display.contentCenterY+90, obstacleWidth, obstacleHeight )
   obs1:setFillColor(0.5)
+  
+  obs2 = display.newRect( display.contentWidth-30, display.contentHeight-50, obstacleWidth, obstacleHeight )
+  obs2:setFillColor(0.5)
+  obs2.anchorX = 0
+  obs2.anchorY = 1
+  obs2.rotation = 135
+  
+  obs3 = display.newRect( 20, display.contentHeight-50, obstacleWidth, obstacleHeight )
+  obs3:setFillColor(0.5)
+  obs3.anchorX = 0
+  obs3.anchorY = 1
+  obs3.rotation = 45
+  
+  local paint = {.5}
+  local obs4Radius = obstacleWidth/3
+  obs4 = display.newCircle( centerX, target.y + target.width/2 + obs4Radius*2, obstacleWidth/3 )
+  
+  obs4.stroke = paint
+  obs4.strokeWidth = 4
 
   physics.addBody( obs1, "static", {friction=frictionValue} )
+  physics.addBody( obs2, "static", {friction=frictionValue} )
+  physics.addBody( obs3, "static", {friction=frictionValue} )
+  physics.addBody( obs4, "dynamic", {friction=frictionValue, density=1.1, radius=obstacleWidth/3} )
 end
 
 -- Show level
@@ -124,6 +152,9 @@ local function resetObjects()
 	display.remove( ball )
 	display.remove( target )
 	display.remove( obs1 )
+  display.remove( obs2 )
+  display.remove( obs3 )
+  display.remove( obs4 )
 	display.remove( bg )
 	display.remove( nextLevelButton )
 	display.remove( levelText )

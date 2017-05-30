@@ -27,12 +27,14 @@ local wallLeft
 local wallRight
 local obs1
 local obs2
+local obs3
+local obs4
 -- 2] Texts
 local levelText
 local levelFailedText
 local retryButton
 -- 3] Variables
-local level = 2
+local level = 10
 local frictionValue = 0.8
 local origX = display.contentCenterX
 local origY = display.contentHeight-100
@@ -97,10 +99,25 @@ end
 
 -- Show Obstacles
 local function showObstacles()
-  obs1 = display.newRect( display.contentCenterX+50, display.contentCenterY, display.contentWidth*0.4, 10 )
-  obs1:setFillColor(0.5)
+  
+  local obstacleWidth = display.contentWidth * 0.3
+  local obstacleHeight = 10
+  local paint = { 0.5 }
+  local centerX = display.contentCenterX
+  local centerY = display.contentCenterY
+  
+  obs1 = display.newCircle( centerX+obstacleWidth/2, centerY-obstacleWidth/2, obstacleWidth/2 )
+  obs1.stroke = paint
+  obs1.strokeWidth = 4
+  
+  obs2 = display.newCircle( centerX-obstacleWidth/2, centerY+obstacleWidth/2, obstacleWidth/2 )
+  obs2.stroke = paint
+  obs2.strokeWidth = 4
 
-  physics.addBody( obs1, "static", {friction=frictionValue} )
+  physics.addBody( obs1, "dynamic", {density=2, friction=frictionValue, radius=obstacleWidth/2} )
+  physics.addBody( obs2, "dynamic", {density=2, friction=frictionValue, radius=obstacleWidth/2} )
+  --physics.addBody( obs3, "static", {friction=frictionValue} )
+  --physics.addBody( obs4, "dynamic", {friction=frictionValue, density=1.1, radius=40} )
 end
 
 -- Show level
@@ -124,6 +141,9 @@ local function resetObjects()
 	display.remove( ball )
 	display.remove( target )
 	display.remove( obs1 )
+  display.remove( obs2 )
+  display.remove( obs3 )
+  display.remove( obs4 )
 	display.remove( bg )
 	display.remove( nextLevelButton )
 	display.remove( levelText )

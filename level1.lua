@@ -8,85 +8,104 @@ local scene = composer.newScene()
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
 -- -----------------------------------------------------------------------------------
 
-display.setDefault( "background", 1)
+display.setDefault( "background", 1 )
 
--- physics
+-- Physics
 local physics = require( "physics" )
-physics.start(  )
+physics.start()
 physics.setGravity( 0, 0 )
 
--- *************************
---  Set Variables
--- *************************
--- 1] Objects
+-- Variables
+local level = 1
 local ball
-local target
-local flooring
+local bg
+local platform
+local wall1, wall2
 local ceiling
-local wallLeft
-local wallRight
-local obs1
-local obs2
--- 2] Texts
-local levelText
-local levelFailedText
-local retryButton
--- 3] Variables
-local level = 2
-local frictionValue = 0.8
+local target
+local numberOfObstacles = 1			-- Number of obstacles
 local origX = display.contentCenterX
-local origY = display.contentHeight-100
-local destX                             -- Stretch direction
-local destY                             -- Stretch direction
+local origY = display.contentHeight-80
+local destX			-- Stretch direction
+local destY			-- Stretch direction
+local path			-- Ball's target path
+local objFriction = 0.8		-- Friction for all objects
 local gameTimer = {}
 local timeLimit = 4000		-- Limit of time before game over
-local hit = false
+local hit = false					-- Change to true if the target has been hit
+local retryButton					-- Retry button
+local levelFailedText
+local targetX = display.contentCenterX
+local targetY = 100
+local nextLevelButton
+local hitText
+local levelText
+
 local scWidth = display.contentWidth
 local scHeight = display.contentHeight
 local centerX = display.contentCenterX
 local centerY = display.contentCenterY
 
--- *************************
---  Functions
--- *************************
+-- Obstacles
+local o1									-- Obstacle 1
 
--- Set Flooring
-local function setFlooring()
-  flooring = display.newRect( centerX, display.contentHeight+5, scWidth, 10 )
-  physics.addBody( flooring, "static", {friction=frictionValue, bounce=0.5} )
-end
--- Set Ceiling
-local function setCeiling()
-  ceiling = display.newRect( centerX, -5, scWidth, 10 )
-  physics.addBody( ceiling, "static", {friction=frictionValue, bounce=0.5} )
-end
--- Set Walls
-local function setWalls()
-  wallLeft = display.newRect( -5, centerY, 10, scHeight )
-  wallLeft:setFillColor(0)
-
-  wallRight = display.newRect( scWidth, centerY, 10, scHeight )
-  wallRight:setFillColor(0)
-
-  physics.addBody( wallLeft, "static", {friction=frictionValue, bounce=0.5} )
-  physics.addBody( wallRight, "static", {friction=frictionValue, bounce=0.5} )
+-- Function to load and display background
+local function displayBackground( scene )
+	bg = display.newImageRect( scene, "img/bg.png", 320, 480 )
+	bg.x = display.contentCenterX
+	bg.y = display.contentCenterY
 end
 
--- Show ball
-local function showBall()
+-- Function to load and display ball
+local function displayBall( scene )
   origX = centerX
   origY = scHeight*.8
-  
   local radius = scWidth*0.05
-  
 	ball = display.newCircle( origX, origY, radius )
 	ball:setFillColor( 0, 0, 0 )
-	physics.addBody( ball, "dynamic", {density=2, radius=radius, bounce=0.5, 	friction=frictionValue} )
+	--ball.x = origX
+	--ball.y = origY
+	physics.addBody( ball, "dynamic", {density=2, radius=radius, bounce=0.5, 	friction=objFriction} )
 	ball.myName = "ball"
 end
 
--- Show target
-local function showTarget()
+-- Load platform
+local function displayPlatform( scene )
+  platform = display.newRect( centerX, scHeight+5, scWidth, 10 )
+  platform:setFillColor(0)
+	physics.addBody( platform, "static", { friction=objFriction, bounce=0.3 } )
+end
+
+-- Load wall left
+local function displayWall1( scene )
+	wall1 = display.newRect( scene, -5, centerY, 10, scHeight )
+  wall1:setFillColor(0)
+	physics.addBody( wall1, "static", { friction=objFriction, bounce=0.3 } )
+end
+
+-- Load wall right
+local function displayWall2( scene )
+	wall2 = display.newRect( scene, scWidth+5, centerY, 10, scHeight )
+  wall2:setFillColor(0)
+	physics.addBody( wall2, "static", { friction=objFriction, bounce=0.3 } )
+end
+
+-- Load ceiling
+local function displayCeiling( scene )
+	ceiling = display.newRect( scene, centerX, -5, scWidth, 10 )
+  ceiling:setFillColor(0)
+	physics.addBody( ceiling, "static", { friction=objFriction, bounce=0.3 } )
+end
+
+-- Display level
+local function displayLevel( scene )
+	levelText = display.newText( "Level: " .. level, 30, 20 )
+	levelText.anchorX = 0
+  levelText:setFillColor(0.3)
+end
+
+-- Load target
+local function displayTarget( scene )
   local radius = scWidth*0.1
 	target = display.newCircle( centerX, scHeight*.2, radius )
 	target:setFillColor( 1, 0, 0 )
@@ -95,35 +114,22 @@ local function showTarget()
 	target.myName = "target"
 end
 
--- Show Obstacles
-local function showObstacles()
-  obs1 = display.newRect( display.contentCenterX+50, display.contentCenterY, display.contentWidth*0.4, 10 )
-  obs1:setFillColor(0.5)
-
-  physics.addBody( obs1, "static", {friction=frictionValue} )
-end
-
--- Show level
-local function showLevel( x )
-  levelText = display.newText( "Level: " .. x, 30, 20 )
-  levelText.anchorX = 0
-  levelText:setFillColor( 0.3 )
+-- Create obstacles
+local function displayObstacles( scene )
+	-- Create obstacle 1
+  o1 = display.newRect( centerX, centerY, display.contentWidth*0.5, 10 )
+  o1:setFillColor(0.5)
+  physics.addBody( o1, "static", {friction=objFriction} )
 end
 
 -- Reset objects
 local function resetObjects()
-
-	--physics.start()
-	--physics.removeBody( ball )
-	--physics.removeBody( target )
-	--physics.removeBody( o1 )
-
 	-- Remove objects
 	display.remove( levelFailedText )
 	display.remove( retryButton )
 	display.remove( ball )
 	display.remove( target )
-	display.remove( obs1 )
+	display.remove( o1 )
 	display.remove( bg )
 	display.remove( nextLevelButton )
 	display.remove( levelText )
@@ -142,7 +148,7 @@ end
 
 -- Trial failed, show failure message and retry button
 local function levelFailed()
-	local levelFailedTextHeight = scHeight*0.1
+  local levelFailedTextHeight = scHeight*0.1
 	levelFailedText = display.newText( "Level Failed!", display.contentCenterX, display.contentCenterY, native.systemFont, levelFailedTextHeight )
   levelFailedText:setFillColor( 1, 0, 0 )
 
@@ -164,16 +170,14 @@ local function gameOver()
 	end
 end
 
--- Launching the ball
+-- Launch the ball
 local function launchBall( vx, vy )
 	timer.performWithDelay( timeLimit, gameOver, 1 )
 	ball:setLinearVelocity( vx, vy )
 end
 
--- ***********************
---    Listeners
--- ***********************
-local function onDrag( event )
+-- Dragging the ball
+local function dragBall( event )
   local ball = event.target
 	local phase = event.phase
 
@@ -226,7 +230,7 @@ end
 -- Show hit message
 local function hasHit()
   local hitTextHeight = scHeight*0.1
-	hitText = display.newText( "HIT!!!", centerX, centerY, native.systemFont, hitTextHeight )
+	hitText = display.newText( "HIT!!!", display.contentCenterX, display.contentCenterY, native.systemFont, hitTextHeight )
   hitText:setFillColor( 0, 0, 1 )
 	
   local nextLevelButtonHeight = hitTextHeight*0.5
@@ -241,7 +245,7 @@ local function hasHit()
 	-- Play collision sound here
 
 	-- Remove drag event listener on the ball
-	ball:removeEventListener( "touch", onDrag )
+	ball:removeEventListener( "touch", dragBall )
 	hit = true
 end
 
@@ -270,7 +274,6 @@ local function onCollision( event )
 	end
 end
 
-
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
 -- -----------------------------------------------------------------------------------
@@ -281,29 +284,48 @@ function scene:create( event )
 	local sceneGroup = self.view
 	-- Code here runs when the scene is first created but has not yet appeared on screen
 
-  -- Pause physics engine
-  physics.pause()
+	-- Pause physics
+	physics.pause()
 
-  -- Create objects
-  setFlooring()
-  setCeiling()
-  setWalls()
-  showBall()
-  showTarget()
-  showObstacles()
-  showLevel(level)
-  
-  -- Add event listeners
-  Runtime:addEventListener( "collision", onCollision )
+	-- Display level
+	displayLevel( sceneGroup )
+
+	-- Load background
+	--displayBackground( sceneGroup )
+
+	-- Load platform
+	displayPlatform( sceneGroup )
+
+	-- Load walls
+	displayWall1( sceneGroup )
+	displayWall2( sceneGroup )
+
+	-- Load ceiling
+	displayCeiling( sceneGroup )
+
+	-- Load ball
+	displayBall( sceneGroup )
+
+	-- Load target
+	displayTarget( sceneGroup )
+
+	-- Load obstacles
+	displayObstacles( sceneGroup )
+
+	-- Add event listeners
+	ball:addEventListener( "touch", dragBall )
+
+	Runtime:addEventListener( "collision", onCollision )
+
 end
 
--- Game Timer
 function gameTimer:timer ( event )
 	local count = event.count
 	if count >= 1 then
 		timer.cancel( event.source )
 	end
 end
+
 
 -- show()
 function scene:show( event )
@@ -316,9 +338,8 @@ function scene:show( event )
 
 	elseif ( phase == "did" ) then
 		-- Code here runs when the scene is entirely on screen
-    physics.start()
+		physics.start()
 
-    ball:addEventListener( "touch", onDrag )
 	end
 end
 
@@ -334,7 +355,7 @@ function scene:hide( event )
 
 	elseif ( phase == "did" ) then
 		-- Code here runs immediately after the scene goes entirely off screen
-    Runtime:removeEventListener( "collision", onCollision )
+		Runtime:removeEventListener( "collision", onCollision )
 		--physics.pause()
 		composer.removeScene( "level"..level )
 	end
