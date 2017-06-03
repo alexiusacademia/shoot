@@ -7,6 +7,7 @@ local scene = composer.newScene()
 -- Code outside of the scene event functions below will only be executed ONCE unless
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
 -- -----------------------------------------------------------------------------------
+require( "scripts.functions" )
 
 display.setDefault( "background", 1)
 
@@ -47,6 +48,7 @@ local scWidth = display.contentWidth
 local scHeight = display.contentHeight
 local centerX = display.contentCenterX
 local centerY = display.contentCenterY
+local maxStretch
 
 -- *************************
 --  Functions
@@ -67,7 +69,7 @@ local function setWalls()
   wallLeft = display.newRect( -5, centerY, 10, scHeight )
   wallLeft:setFillColor(0)
 
-  wallRight = display.newRect( scWidth, centerY, 10, scHeight )
+  wallRight = display.newRect( scWidth+5, centerY, 10, scHeight )
   wallRight:setFillColor(0)
 
   physics.addBody( wallLeft, "static", {friction=frictionValue, bounce=0.5} )
@@ -100,22 +102,22 @@ end
 -- Show Obstacles
 local function showObstacles()
   
-  local obstacleWidth = display.contentWidth * 0.3
+  local obstacleWidth = display.contentWidth * 0.4
   local obstacleHeight = 10
   local paint = { 0.5 }
   local centerX = display.contentCenterX
   local centerY = display.contentCenterY
   
-  obs1 = display.newCircle( centerX+obstacleWidth/2, centerY, obstacleWidth/2 )
+  obs1 = display.newCircle( centerX+obstacleWidth/2+10, centerY, obstacleWidth/2 )
   obs1.stroke = paint
-  obs1.strokeWidth = 4
+  obs1.strokeWidth = 2
   
-  obs2 = display.newCircle( centerX-obstacleWidth/2, centerY, obstacleWidth/2 )
+  obs2 = display.newCircle( centerX-obstacleWidth/2-10, centerY, obstacleWidth/2 )
   obs2.stroke = paint
-  obs2.strokeWidth = 4
+  obs2.strokeWidth = 2
 
-  physics.addBody( obs1, "dynamic", {density=2, friction=frictionValue, radius=obstacleWidth/2} )
-  physics.addBody( obs2, "dynamic", {density=2, friction=frictionValue, radius=obstacleWidth/2} )
+  physics.addBody( obs1, "dynamic", {density=.5, friction=frictionValue, radius=obstacleWidth/2} )
+  physics.addBody( obs2, "dynamic", {density=.5, friction=frictionValue, radius=obstacleWidth/2} )
   --physics.addBody( obs3, "static", {friction=frictionValue} )
   --physics.addBody( obs4, "dynamic", {friction=frictionValue, density=1.1, radius=40} )
 end
@@ -129,12 +131,6 @@ end
 
 -- Reset objects
 local function resetObjects()
-
-	--physics.start()
-	--physics.removeBody( ball )
-	--physics.removeBody( target )
-	--physics.removeBody( o1 )
-
 	-- Remove objects
 	display.remove( levelFailedText )
 	display.remove( retryButton )
@@ -149,8 +145,6 @@ local function resetObjects()
 	display.remove( levelText )
 	display.remove( nextLevelButton )
 	display.remove( hitText )
-
-	--physics.stop()
 end
 
 -- Reset level
@@ -162,13 +156,15 @@ end
 
 -- Trial failed, show failure message and retry button
 local function levelFailed()
+  physics.pause()
 	local levelFailedTextHeight = scHeight*0.1
 	levelFailedText = display.newText( "Level Failed!", display.contentCenterX, display.contentCenterY, native.systemFont, levelFailedTextHeight )
   levelFailedText:setFillColor( 1, 0, 0 )
 
-  local retryButtonTextHeight = scHeight*0.05
-	retryButton = display.newText( "| Retry |", display.contentCenterX, display.contentCenterY + 22 + 16 + 20, native.systemFont, retryButtonTextHeight )
-  retryButton:setFillColor( 1, 0, 0 )
+  local retryButtonTextHeight = centerX*.1
+  retryButton = display.newImageRect( "img/play.png", retryButtonTextHeight*2, retryButtonTextHeight*2 )
+  retryButton.x = centerX
+  retryButton.y = levelFailedText.y + levelFailedText.height/2+10+retryButton.height/2
 
 	retryButton:addEventListener( "tap", resetLevel )
 
@@ -181,6 +177,7 @@ local function gameOver()
 	if (hit == false) then
 		-- Show failed
 		levelFailed()
+    
 	end
 end
 
@@ -190,9 +187,59 @@ local function launchBall( vx, vy )
 	ball:setLinearVelocity( vx, vy )
 end
 
+-- Get distance between two points
+local function getDistance(x1, y1, x2, y2)
+  return math.sqrt((x2-x1)^2 + (y2-y1)^2)
+end
+
+local function getMaxLocationX(x1, y1, x2, y2)
+  local x3 = origX
+  local y3
+  local d = 0
+  local increment
+  
+  -- Decide if increment is positive or negative
+  if (x2 > x1) then
+    increment = 0.1
+  else
+    increment = -0.1
+  end
+  
+  while (d < maxStretch) do
+    x3 = x3 + increment
+    d = math.sqrt((x3-x1)^2 + ((y2-y1)/(x2-x1)*(x3-x1))^2)
+  end
+  y3 = (y2-y1)/(x2-x1)*(x3-x1) + y1
+
+  return x3
+end
+
+local function getMaxLocationY(x1, y1, x2, y2)
+  local x3 = origX
+  local y3
+  local d = 0
+  local increment
+  
+  -- Decide if increment is positive or negative
+  if (x2 > x1) then
+    increment = 0.1
+  else
+    increment = -0.1
+  end
+  
+  while (d < maxStretch) do
+    x3 = x3 + increment
+    d = math.sqrt((x3-x1)^2 + ((y2-y1)/(x2-x1)*(x3-x1))^2)
+  end
+  y3 = (y2-y1)/(x2-x1)*(x3-x1) + y1
+
+  return y3
+end
+
 -- ***********************
 --    Listeners
 -- ***********************
+-- Dragging the ball
 local function onDrag( event )
   local ball = event.target
 	local phase = event.phase
@@ -204,10 +251,25 @@ local function onDrag( event )
 		ball.touchOffsetX = event.x - ball.x
 		ball.touchOffsetY = event.y - ball.y
 	elseif ( phase == "moved" ) then
-		-- Move the ball to the new position
-		ball.x = event.x - ball.touchOffsetX
-		ball.y = event.y - ball.touchOffsetY
-
+    -- Get the event location
+    local newX = event.x - ball.touchOffsetX
+    local newY = event.y - ball.touchOffsetY
+    
+    -- Check for max stretch
+    local dist = getDistance(newX, newY, origX, origY)
+    
+    if (dist > maxStretch) then
+      local newLocationX = getMaxLocationX(origX, origY, newX, newY)
+      local newLocationY = getMaxLocationY(origX, origY, newX, newY)
+      
+      ball.x = newLocationX
+      ball.y = newLocationY
+      print(newX..", "..newY.."|"..ball.x..", "..ball.y)
+    else
+      ball.x = event.x - ball.touchOffsetX
+      ball.y = event.y - ball.touchOffsetY
+    end
+    
 		destX = ball.x
 		destY = ball.y
 
@@ -233,6 +295,8 @@ local function onDrag( event )
 		launchBall( x * -10, y * -10 )
 
 		display.remove( path )
+    
+    physics.start()
 	end
 	return true
 end
@@ -252,7 +316,7 @@ local function hasHit()
   local nextLevelButtonHeight = hitTextHeight*0.5
   nextLevelButton = display.newImageRect( "img/next.png", nextLevelButtonHeight*4, nextLevelButtonHeight )
   nextLevelButton.x = display.contentCenterX
-  nextLevelButton.y = display.contentCenterY+22+10+12
+  nextLevelButton.y = hitText.y + hitText.height/2 + nextLevelButtonHeight*0.7
 	nextLevelButton:setFillColor(0, 1, 0)
 
 	-- Add event listener
@@ -263,6 +327,9 @@ local function hasHit()
 	-- Remove drag event listener on the ball
 	ball:removeEventListener( "touch", onDrag )
 	hit = true
+  
+  -- Save level
+  saveLevel( level+1 )
 end
 
 -- On collision
@@ -312,6 +379,7 @@ function scene:create( event )
   showTarget()
   showObstacles()
   showLevel(level)
+  maxStretch = scHeight - origY
   
   -- Add event listeners
   Runtime:addEventListener( "collision", onCollision )
@@ -336,7 +404,7 @@ function scene:show( event )
 
 	elseif ( phase == "did" ) then
 		-- Code here runs when the scene is entirely on screen
-    physics.start()
+    --physics.start()
 
     ball:addEventListener( "touch", onDrag )
 	end
