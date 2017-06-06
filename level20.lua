@@ -29,12 +29,14 @@ local wallRight
 local obs1
 local obs2
 local obs3
+local obs4
 -- 2] Texts
 local levelText
 local levelFailedText
 local retryButton
+local msgText
 -- 3] Variables
-local level = 7
+local level = 20
 local frictionValue = 0.8
 local origX = display.contentCenterX
 local origY = display.contentHeight-100
@@ -95,7 +97,7 @@ end
 -- Show target
 local function showTarget()
   local radius = scWidth*0.1
-	target = display.newCircle( centerX, scHeight*.2, radius )
+	target = display.newCircle( centerX, radius, radius )
 	target:setFillColor( 1, 0, 0 )
 
 	physics.addBody( target, "static", {radius=radius, density=3} )
@@ -105,27 +107,25 @@ end
 -- Show Obstacles
 local function showObstacles()
   
-  local obstacleWidth = display.contentWidth * 0.7
+  local obstacleWidth = display.contentWidth * 0.6
   local obstacleHeight = 10
+  local paint = { 0.5 }
+  local centerX = display.contentCenterX
+  local centerY = display.contentCenterY
   
-  obs1 = display.newRect( display.contentCenterX, ball.y-ball.height/2-obstacleHeight-obstacleWidth*.5, obstacleWidth, obstacleHeight )
-  obs1:setFillColor(0.5)
+  obs1 = display.newRect( centerX, target.y+target.height/2+obstacleHeight, obstacleWidth, obstacleHeight )
+  obs1:setFillColor(1)
+  obs1.stroke = paint
+  obs1.strokeWidth = 2
   
-  obs2 = display.newRect( scWidth-obstacleWidth*.5/1.414, scHeight, obstacleWidth*.5, obstacleHeight )
-  obs2:setFillColor(0.5)
+  obs2 = display.newRect( centerX, centerY, centerX, obstacleHeight )
+  obs2:setFillColor(0.3)
   obs2.anchorX = 0
-  obs2.anchorY = 1
-  obs2.rotation = -45
-  
-  obs3 = display.newRect( obstacleWidth*.5/1.414, scHeight, obstacleWidth*.5, obstacleHeight )
-  obs3:setFillColor(0.5)
-  obs3.anchorX = 1
-  obs3.anchorY = 1
-  obs3.rotation = 45
 
-  physics.addBody( obs1, "static", {friction=frictionValue} )
-  physics.addBody( obs2, "static", {friction=frictionValue} )
-  physics.addBody( obs3, "static", {friction=frictionValue} )
+  physics.addBody( obs1, "dynamic", {density=0.5, friction=frictionValue} )
+  physics.addBody( obs2, "static", {friction=frictionValue, bounce=1} )
+  --physics.addBody( obs3, "static", {friction=frictionValue} )
+  --physics.addBody( obs4, "dynamic", {friction=frictionValue, density=1.1, radius=40} )
 end
 
 -- Show level
@@ -145,9 +145,11 @@ local function resetObjects()
 	display.remove( obs1 )
   display.remove( obs2 )
   display.remove( obs3 )
+  display.remove( obs4 )
 	display.remove( nextLevelButton )
 	display.remove( levelText )
 	display.remove( hitText )
+  display.remove( msgText )
 
 	levelFailedText = nil
   retryButton = nil
@@ -156,9 +158,11 @@ local function resetObjects()
   obs1 = nil
   obs2 = nil
   obs3 = nil
+  obs4 = nil
   nextLevelButton = nil
   levelText = nil
   hitText = nil
+  msgText = nil
 end
 
 -- Reset level
@@ -178,9 +182,9 @@ local function levelFailed()
   retryButton = display.newImageRect( "img/play.png", retryButtonTextHeight*2, retryButtonTextHeight*2 )
   retryButton.x = centerX
   retryButton.y = levelFailedText.y + levelFailedText.height/2+10+retryButton.height/2
-
+  
 	retryButton:addEventListener( "tap", resetLevel )
-
+  
 	-- Stop physics
 	physics.pause()
 end
@@ -319,19 +323,23 @@ end
 -- Go to next level
 local function nextLevel()
 	resetObjects()
-	composer.gotoScene( "level"..level+1, {timer=800, effect="crossFade"} )
+	--composer.gotoScene( "level"..level+1, {timer=800, effect="crossFade"} )
+  composer.gotoScene( "menu" )
 end
 
 -- Show hit message
 local function hasHit()
-  local hitTextHeight = scHeight*0.1
-	hitText = display.newText( "HIT!!!", centerX, centerY, native.systemFont, hitTextHeight )
+  local hitTextHeight = scHeight*0.05
+	hitText = display.newText( "Congratulations!!!", centerX, centerY, native.systemFont, hitTextHeight )
   hitText:setFillColor( 0, 0, 1 )
+  
+  msgText = display.newText( {text="You have reached the max level of this version. Please stay tuned for weekly updates!", x=centerX, y=hitText.y+hitTextHeight+11, fontSize=12, height=0, width=scWidth, align="center"} )
+  msgText:setFillColor(0, 0, 1)
 	
   local nextLevelButtonHeight = hitTextHeight*0.5
   nextLevelButton = display.newImageRect( "img/next.png", nextLevelButtonHeight*4, nextLevelButtonHeight )
   nextLevelButton.x = display.contentCenterX
-  nextLevelButton.y = hitText.y + hitText.height/2 + nextLevelButtonHeight*0.7
+  nextLevelButton.y = msgText.y+msgText.height + nextLevelButtonHeight*0.7
 	nextLevelButton:setFillColor(0, 1, 0)
 
 	-- Add event listener
@@ -345,9 +353,7 @@ local function hasHit()
 	hit = true
   
   -- Save level
-  if (loadLevel() <= level+1) then
-    saveLevel( level+1 )
-  end
+  saveLevel(level)
 end
 
 -- On collision
@@ -404,7 +410,7 @@ function scene:create( event )
   showTarget()
   showObstacles()
   showLevel(level)
-  maxStretch = scHeight - origY
+  maxStretch = scHeight-ball.y
   
   -- Add event listeners
   Runtime:addEventListener( "collision", onCollision )
@@ -459,7 +465,7 @@ function scene:destroy( event )
 
 	local sceneGroup = self.view
 	-- Code here runs prior to the removal of scene's view
-
+  
   -- Dispose audios
   audio.dispose( bounceSound )
   audio.dispose( failedSound )

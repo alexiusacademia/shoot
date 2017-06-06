@@ -29,12 +29,13 @@ local wallRight
 local obs1
 local obs2
 local obs3
+local obs4
 -- 2] Texts
 local levelText
 local levelFailedText
 local retryButton
 -- 3] Variables
-local level = 7
+local level = 14
 local frictionValue = 0.8
 local origX = display.contentCenterX
 local origY = display.contentHeight-100
@@ -95,7 +96,7 @@ end
 -- Show target
 local function showTarget()
   local radius = scWidth*0.1
-	target = display.newCircle( centerX, scHeight*.2, radius )
+	target = display.newCircle( centerX, centerY-ball.width-radius, radius )
 	target:setFillColor( 1, 0, 0 )
 
 	physics.addBody( target, "static", {radius=radius, density=3} )
@@ -105,27 +106,26 @@ end
 -- Show Obstacles
 local function showObstacles()
   
-  local obstacleWidth = display.contentWidth * 0.7
+  local obstacleWidth = display.contentWidth * 0.4
   local obstacleHeight = 10
+  local paint = { 0.5 }
+  local centerX = display.contentCenterX
+  local centerY = display.contentCenterY
   
-  obs1 = display.newRect( display.contentCenterX, ball.y-ball.height/2-obstacleHeight-obstacleWidth*.5, obstacleWidth, obstacleHeight )
-  obs1:setFillColor(0.5)
+  obs1 = display.newCircle( centerX, centerY, ball.width )
+  obs1.stroke = paint
+  obs1.strokeWidth = 2
   
-  obs2 = display.newRect( scWidth-obstacleWidth*.5/1.414, scHeight, obstacleWidth*.5, obstacleHeight )
+  obs2 = display.newRect( target.x-target.width, target.y, obstacleHeight, obstacleWidth )
   obs2:setFillColor(0.5)
-  obs2.anchorX = 0
-  obs2.anchorY = 1
-  obs2.rotation = -45
   
-  obs3 = display.newRect( obstacleWidth*.5/1.414, scHeight, obstacleWidth*.5, obstacleHeight )
+  obs3 = display.newRect( target.x+target.width, target.y, obstacleHeight, obstacleWidth )
   obs3:setFillColor(0.5)
-  obs3.anchorX = 1
-  obs3.anchorY = 1
-  obs3.rotation = 45
 
-  physics.addBody( obs1, "static", {friction=frictionValue} )
+  physics.addBody( obs1, "dynamic", {density=.8, friction=frictionValue} )
   physics.addBody( obs2, "static", {friction=frictionValue} )
   physics.addBody( obs3, "static", {friction=frictionValue} )
+  --physics.addBody( obs4, "dynamic", {friction=frictionValue, density=1.1, radius=40} )
 end
 
 -- Show level
@@ -145,6 +145,7 @@ local function resetObjects()
 	display.remove( obs1 )
   display.remove( obs2 )
   display.remove( obs3 )
+  display.remove( obs4 )
 	display.remove( nextLevelButton )
 	display.remove( levelText )
 	display.remove( hitText )
@@ -156,6 +157,7 @@ local function resetObjects()
   obs1 = nil
   obs2 = nil
   obs3 = nil
+  obs4 = nil
   nextLevelButton = nil
   levelText = nil
   hitText = nil
@@ -404,7 +406,7 @@ function scene:create( event )
   showTarget()
   showObstacles()
   showLevel(level)
-  maxStretch = scHeight - origY
+  maxStretch = scHeight-ball.y
   
   -- Add event listeners
   Runtime:addEventListener( "collision", onCollision )
@@ -459,7 +461,7 @@ function scene:destroy( event )
 
 	local sceneGroup = self.view
 	-- Code here runs prior to the removal of scene's view
-
+  
   -- Dispose audios
   audio.dispose( bounceSound )
   audio.dispose( failedSound )

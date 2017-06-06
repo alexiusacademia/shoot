@@ -48,6 +48,10 @@ local scHeight = display.contentHeight
 local centerX = display.contentCenterX
 local centerY = display.contentCenterY
 local maxStretch
+-- 4] Sounds
+local bounceSound
+local failedSound
+local successSound
 
 -- *************************
 --  Functions
@@ -101,7 +105,7 @@ end
 -- Show Obstacles
 local function showObstacles()
   
-  local obstacleWidth = display.contentWidth * 0.4
+  local obstacleWidth = scWidth * 0.6
   local obstacleHeight = 10
   
   obs1 = display.newRect( display.contentCenterX, display.contentCenterY+100, obstacleWidth, obstacleHeight )
@@ -127,12 +131,6 @@ end
 
 -- Reset objects
 local function resetObjects()
-
-	--physics.start()
-	--physics.removeBody( ball )
-	--physics.removeBody( target )
-	--physics.removeBody( o1 )
-
 	-- Remove objects
 	display.remove( levelFailedText )
 	display.remove( retryButton )
@@ -141,13 +139,20 @@ local function resetObjects()
 	display.remove( obs1 )
   display.remove( obs2 )
   display.remove( obs3 )
-	display.remove( bg )
 	display.remove( nextLevelButton )
 	display.remove( levelText )
-	display.remove( nextLevelButton )
 	display.remove( hitText )
 
-	--physics.stop()
+	levelFailedText = nil
+  retryButton = nil
+  ball = nil
+  target = nil
+  obs1 = nil
+  obs2 = nil
+  obs3 = nil
+  nextLevelButton = nil
+  levelText = nil
+  hitText = nil
 end
 
 -- Reset level
@@ -177,6 +182,8 @@ end
 -- Game over
 local function gameOver()
 	if (hit == false) then
+    -- Play Sound
+    audio.play( failedSound )
 		-- Show failed
 		levelFailed()
 	end
@@ -265,7 +272,7 @@ local function onDrag( event )
       
       ball.x = newLocationX
       ball.y = newLocationY
-      print(newX..", "..newY.."|"..ball.x..", "..ball.y)
+      
     else
       ball.x = event.x - ball.touchOffsetX
       ball.y = event.y - ball.touchOffsetY
@@ -297,6 +304,8 @@ local function onDrag( event )
 
 		display.remove( path )
     physics.start()
+    
+    ball:removeEventListener( "touch", onDrag )
 	end
 	return true
 end
@@ -323,13 +332,16 @@ local function hasHit()
 	nextLevelButton:addEventListener( "tap", nextLevel)
 
 	-- Play collision sound here
-
+  audio.play( successSound )
+  
 	-- Remove drag event listener on the ball
 	ball:removeEventListener( "touch", onDrag )
 	hit = true
   
   -- Save level
-  saveLevel( level+1 )
+  if (loadLevel() <= level+1) then
+    saveLevel( level+1 )
+  end
 end
 
 -- On collision
@@ -342,6 +354,8 @@ local function onCollision( event )
 					(obj1.myName == "target" and obj2.myName == "ball") ) then
 						-- Target has been hit!
 						hasHit()
+    else
+      audio.play(bounceSound)
 		end
 
 	elseif (event.phase == "ended") then
@@ -370,6 +384,11 @@ function scene:create( event )
 
   -- Pause physics engine
   physics.pause()
+  
+  -- Setup sounds
+  bounceSound = audio.loadSound( "sounds/bounce.wav" )
+  failedSound = audio.loadSound( "sounds/failed.wav" )
+  successSound = audio.loadSound( "sounds/success.wav" )
 
   -- Create objects
   setFlooring()
@@ -434,7 +453,11 @@ function scene:destroy( event )
 
 	local sceneGroup = self.view
 	-- Code here runs prior to the removal of scene's view
-
+  
+  -- Dispose audios
+  audio.dispose( bounceSound )
+  audio.dispose( failedSound )
+  audio.dispose( successSound )
 end
 
 

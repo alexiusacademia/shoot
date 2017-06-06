@@ -47,6 +47,10 @@ local scHeight = display.contentHeight
 local centerX = display.contentCenterX
 local centerY = display.contentCenterY
 local maxStretch
+-- 4] Sounds
+local bounceSound
+local failedSound
+local successSound
 
 -- *************************
 --  Functions
@@ -67,7 +71,7 @@ local function setWalls()
   wallLeft = display.newRect( -5, centerY, 10, scHeight )
   wallLeft:setFillColor(0)
 
-  wallRight = display.newRect( scWidth, centerY, 10, scHeight )
+  wallRight = display.newRect( scWidth+5, centerY, 10, scHeight )
   wallRight:setFillColor(0)
 
   physics.addBody( wallLeft, "static", {friction=frictionValue, bounce=0.5} )
@@ -101,18 +105,21 @@ end
 -- Show Obstacles
 local function showObstacles()
   
-  local obstacleWidth = display.contentWidth * 0.2
+  local obstacleWidth = display.contentWidth * 0.3
   local obstacleHeight = 10
   
-  obs1 = display.newRect( centerX, centerY, obstacleWidth, obstacleHeight )
+  obs1 = display.newRect( centerX, ball.y-ball.height/2-obstacleHeight, obstacleWidth, obstacleHeight )
   obs1:setFillColor(0.5)
   
-  obs2 = display.newRect( display.contentWidth-obstacleWidth, display.contentCenterY-50, obstacleWidth, obstacleHeight )
+  obs2 = display.newRect( 0, centerY-50, obstacleWidth, obstacleHeight )
   obs2:setFillColor(0.5)
+  obs2.anchorX = 0
   
-  obs3 = display.newRect( obstacleWidth, display.contentCenterY/2+50, obstacleWidth, obstacleHeight )
+  obs3 = display.newRect( scWidth, centerY/2+50, obstacleWidth, obstacleHeight )
   obs3.anchorX = 0
   obs3:setFillColor(0.5)
+  obs3.anchorX = 1
+  
 
   physics.addBody( obs1, "static", {friction=frictionValue} )
   physics.addBody( obs2, "static", {friction=frictionValue} )
@@ -128,12 +135,6 @@ end
 
 -- Reset objects
 local function resetObjects()
-
-	--physics.start()
-	--physics.removeBody( ball )
-	--physics.removeBody( target )
-	--physics.removeBody( o1 )
-
 	-- Remove objects
 	display.remove( levelFailedText )
 	display.remove( retryButton )
@@ -142,13 +143,20 @@ local function resetObjects()
 	display.remove( obs1 )
   display.remove( obs2 )
   display.remove( obs3 )
-	display.remove( bg )
 	display.remove( nextLevelButton )
 	display.remove( levelText )
-	display.remove( nextLevelButton )
 	display.remove( hitText )
 
-	--physics.stop()
+	levelFailedText = nil
+  retryButton = nil
+  ball = nil
+  target = nil
+  obs1 = nil
+  obs2 = nil
+  obs3 = nil
+  nextLevelButton = nil
+  levelText = nil
+  hitText = nil
 end
 
 -- Reset level
@@ -178,6 +186,8 @@ end
 -- Game over
 local function gameOver()
 	if (hit == false) then
+    -- Play Sound
+    audio.play( failedSound )
 		-- Show failed
 		levelFailed()
 	end
@@ -298,6 +308,8 @@ local function onDrag( event )
 
 		display.remove( path )
     physics.start()
+    
+    ball:removeEventListener( "touch", onDrag )
 	end
 	return true
 end
@@ -324,12 +336,16 @@ local function hasHit()
 	nextLevelButton:addEventListener( "tap", nextLevel)
 
 	-- Play collision sound here
+  audio.play( successSound )
 
 	-- Remove drag event listener on the ball
 	ball:removeEventListener( "touch", onDrag )
 	hit = true
   
-  saveLevel( level+1 )
+  -- Save level
+  if (loadLevel() <= level+1) then
+    saveLevel( level+1 )
+  end
 end
 
 -- On collision
@@ -342,6 +358,8 @@ local function onCollision( event )
 					(obj1.myName == "target" and obj2.myName == "ball") ) then
 						-- Target has been hit!
 						hasHit()
+    else
+      audio.play(bounceSound)
 		end
 
 	elseif (event.phase == "ended") then
@@ -370,6 +388,11 @@ function scene:create( event )
 
   -- Pause physics engine
   physics.pause()
+  
+  -- Setup sounds
+  bounceSound = audio.loadSound( "sounds/bounce.wav" )
+  failedSound = audio.loadSound( "sounds/failed.wav" )
+  successSound = audio.loadSound( "sounds/success.wav" )
 
   -- Create objects
   setFlooring()
@@ -435,6 +458,10 @@ function scene:destroy( event )
 	local sceneGroup = self.view
 	-- Code here runs prior to the removal of scene's view
 
+  -- Dispose audios
+  audio.dispose( bounceSound )
+  audio.dispose( failedSound )
+  audio.dispose( successSound )
 end
 
 

@@ -48,6 +48,11 @@ local scHeight = display.contentHeight
 local centerX = display.contentCenterX
 local centerY = display.contentCenterY
 
+-- Sounds
+local bounceSound
+local failedSound
+local successSound
+
 -- Obstacles
 local o1									-- Obstacle 1
 
@@ -135,10 +140,17 @@ local function resetObjects()
 	display.remove( bg )
 	display.remove( nextLevelButton )
 	display.remove( levelText )
-	display.remove( nextLevelButton )
 	display.remove( hitText )
-
-	--physics.stop()
+  
+  levelFailedText = nil
+  retryButton = nil
+  ball = nil
+  target = nil
+  o1 = nil
+  bg = nil
+  nextLevelButton = nil
+  levelText = nil
+  hitText = nil
 end
 
 -- Reset level
@@ -168,6 +180,8 @@ end
 -- Game over
 local function gameOver()
 	if (hit == false) then
+    -- Play Sound
+    audio.play( failedSound )
 		-- Show failed
 		levelFailed()
 	end
@@ -285,6 +299,8 @@ local function dragBall( event )
 
 		display.remove( path )
     physics.start()
+    
+    --ball:removeEventListener( "touch", onDrag )
 	end
 	return true
 end
@@ -311,13 +327,16 @@ local function hasHit()
 	nextLevelButton:addEventListener( "tap", nextLevel)
 
 	-- Play collision sound here
+  audio.play( successSound )
 
 	-- Remove drag event listener on the ball
 	ball:removeEventListener( "touch", dragBall )
 	hit = true
   
   -- Save level
-  saveLevel( level+1 )
+  if (loadLevel() <= level+1) then
+    saveLevel( level+1 )
+  end
 end
 
 -- On collision
@@ -330,6 +349,8 @@ local function onCollision( event )
 					(obj1.myName == "target" and obj2.myName == "ball") ) then
 						-- Target has been hit!
 						hasHit()
+    else
+      audio.play(bounceSound)
 		end
 
 	elseif (event.phase == "ended") then
@@ -357,6 +378,11 @@ function scene:create( event )
 
 	-- Pause physics
 	physics.pause()
+  
+  -- Setup sounds
+  bounceSound = audio.loadSound( "sounds/bounce.wav" )
+  failedSound = audio.loadSound( "sounds/failed.wav" )
+  successSound = audio.loadSound( "sounds/success.wav" )
 
 	-- Display level
 	displayLevel( sceneGroup )
@@ -440,7 +466,11 @@ function scene:destroy( event )
 
 	local sceneGroup = self.view
 	-- Code here runs prior to the removal of scene's view
-
+  
+  -- Dispose audios
+  audio.dispose( bounceSound )
+  audio.dispose( failedSound )
+  audio.dispose( successSound )
 end
 
 

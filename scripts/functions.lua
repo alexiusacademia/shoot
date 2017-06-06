@@ -43,5 +43,5 @@ function loadLevel()
   end
   file = nil
   
-  return level
+  return tonumber(level)
 end

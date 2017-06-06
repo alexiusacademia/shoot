@@ -49,6 +49,10 @@ local scHeight = display.contentHeight
 local centerX = display.contentCenterX
 local centerY = display.contentCenterY
 local maxStretch
+-- 4] Sounds
+local bounceSound
+local failedSound
+local successSound
 
 -- *************************
 --  Functions
@@ -108,17 +112,21 @@ local function showObstacles()
   local centerX = display.contentCenterX
   local centerY = display.contentCenterY
   
-  obs1 = display.newCircle( centerX+obstacleWidth/2+10, centerY, obstacleWidth/2 )
-  obs1.stroke = paint
-  obs1.strokeWidth = 2
+  --obs1 = display.newRect( centerX, target.y+target.height, obstacleWidth, obstacleHeight )
+  --obs1:setFillColor(0.5)
+  --obs1.anchorX = 0
   
-  obs2 = display.newCircle( centerX-obstacleWidth/2-10, centerY, obstacleWidth/2 )
+  obs2 = display.newCircle( centerX-obstacleWidth/2-10, target.y+target.height/2+obstacleWidth/2, obstacleWidth/2 )
   obs2.stroke = paint
   obs2.strokeWidth = 2
+  
+  obs3 = display.newRect( centerX, ball.y-ball.height/2-obstacleHeight, obstacleWidth, obstacleHeight )
+  obs3.anchorX = 0
+  obs3:setFillColor(0.5)
 
-  physics.addBody( obs1, "dynamic", {density=.5, friction=frictionValue, radius=obstacleWidth/2} )
-  physics.addBody( obs2, "dynamic", {density=.5, friction=frictionValue, radius=obstacleWidth/2} )
-  --physics.addBody( obs3, "static", {friction=frictionValue} )
+  --physics.addBody( obs1, "static", {friction=frictionValue} )
+  physics.addBody( obs2, "dynamic", {density=.75, friction=frictionValue, radius=obstacleWidth/2} )
+  physics.addBody( obs3, "static", {friction=frictionValue, bounce=0.5} )
   --physics.addBody( obs4, "dynamic", {friction=frictionValue, density=1.1, radius=40} )
 end
 
@@ -140,11 +148,21 @@ local function resetObjects()
   display.remove( obs2 )
   display.remove( obs3 )
   display.remove( obs4 )
-	display.remove( bg )
 	display.remove( nextLevelButton )
 	display.remove( levelText )
-	display.remove( nextLevelButton )
 	display.remove( hitText )
+  
+  levelFailedText = nil
+  retryButton = nil
+  ball = nil
+  target = nil
+  obs1 = nil
+  obs2 = nil
+  obs3 = nil
+  obs4 = nil
+  nextLevelButton = nil
+  levelText = nil
+  hitText = nil
 end
 
 -- Reset level
@@ -175,6 +193,8 @@ end
 -- Game over
 local function gameOver()
 	if (hit == false) then
+    -- Play Sound
+    audio.play( failedSound )
 		-- Show failed
 		levelFailed()
     
@@ -264,7 +284,7 @@ local function onDrag( event )
       
       ball.x = newLocationX
       ball.y = newLocationY
-      print(newX..", "..newY.."|"..ball.x..", "..ball.y)
+      
     else
       ball.x = event.x - ball.touchOffsetX
       ball.y = event.y - ball.touchOffsetY
@@ -295,8 +315,9 @@ local function onDrag( event )
 		launchBall( x * -10, y * -10 )
 
 		display.remove( path )
-    
     physics.start()
+    
+    ball:removeEventListener( "touch", onDrag )
 	end
 	return true
 end
@@ -323,13 +344,16 @@ local function hasHit()
 	nextLevelButton:addEventListener( "tap", nextLevel)
 
 	-- Play collision sound here
+  audio.play( successSound )
 
 	-- Remove drag event listener on the ball
 	ball:removeEventListener( "touch", onDrag )
 	hit = true
   
   -- Save level
-  saveLevel( level+1 )
+  if (loadLevel() <= level+1) then
+    saveLevel( level+1 )
+  end
 end
 
 -- On collision
@@ -342,6 +366,8 @@ local function onCollision( event )
 					(obj1.myName == "target" and obj2.myName == "ball") ) then
 						-- Target has been hit!
 						hasHit()
+    else
+      audio.play(bounceSound)
 		end
 
 	elseif (event.phase == "ended") then
@@ -370,6 +396,11 @@ function scene:create( event )
 
   -- Pause physics engine
   physics.pause()
+  
+  -- Setup sounds
+  bounceSound = audio.loadSound( "sounds/bounce.wav" )
+  failedSound = audio.loadSound( "sounds/failed.wav" )
+  successSound = audio.loadSound( "sounds/success.wav" )
 
   -- Create objects
   setFlooring()
@@ -434,7 +465,11 @@ function scene:destroy( event )
 
 	local sceneGroup = self.view
 	-- Code here runs prior to the removal of scene's view
-
+  
+  -- Dispose audios
+  audio.dispose( bounceSound )
+  audio.dispose( failedSound )
+  audio.dispose( successSound )
 end
 
 

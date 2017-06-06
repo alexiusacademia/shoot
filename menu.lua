@@ -42,6 +42,7 @@ end
 -- Go to level
 local function gotoLevel()
   composer.gotoScene( "level"..level )
+  --composer.gotoScene( "level4" )
 end
 
 -- -----------------------------------------------------------------------------------
