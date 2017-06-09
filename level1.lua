@@ -42,6 +42,7 @@ local nextLevelButton
 local hitText
 local levelText
 local maxStretch
+local ballRadius
 
 local scWidth = display.contentWidth
 local scHeight = display.contentHeight
@@ -67,12 +68,12 @@ end
 local function displayBall( scene )
   origX = centerX
   origY = scHeight*.8
-  local radius = scWidth*0.05
-	ball = display.newCircle( origX, origY, radius )
+  ballRadius = scWidth*0.05
+	ball = display.newCircle( origX, origY, ballRadius )
 	ball:setFillColor( 0, 0, 0 )
 	--ball.x = origX
 	--ball.y = origY
-	physics.addBody( ball, "dynamic", {density=2, radius=radius, bounce=0.5, 	friction=objFriction} )
+	physics.addBody( ball, "dynamic", {density=2, radius=ballRadius, bounce=0.5, 	friction=objFriction} )
 	ball.myName = "ball"
 end
 
@@ -251,10 +252,18 @@ local function dragBall( event )
 		-- Set touch focus on the ball
 		display.currentStage:setFocus( ball )
 		-- Store initial offset position
-		ball.touchOffsetX = event.x - ball.x
-		ball.touchOffsetY = event.y - ball.y
+    ball.touchOffsetX = event.x - ball.x
+    ball.touchOffsetY = event.y - ball.y
+    
 	elseif ( phase == "moved" ) then
     -- Get the event location
+    if (getDistance(origX, origY, event.x, event.y) > ballRadius) then
+      ball.touchOffsetX = 0
+      ball.touchOffsetY = 0
+    else
+      ball.touchOffsetX = event.x - ball.x
+      ball.touchOffsetY = event.y - ball.y
+    end
     local newX = event.x - ball.touchOffsetX
     local newY = event.y - ball.touchOffsetY
     
@@ -267,7 +276,7 @@ local function dragBall( event )
       
       ball.x = newLocationX
       ball.y = newLocationY
-      print(newX..", "..newY.."|"..ball.x..", "..ball.y)
+      
     else
       ball.x = event.x - ball.touchOffsetX
       ball.y = event.y - ball.touchOffsetY
@@ -300,7 +309,7 @@ local function dragBall( event )
 		display.remove( path )
     physics.start()
     
-    --ball:removeEventListener( "touch", onDrag )
+    ball:removeEventListener( "touch", dragBall )
 	end
 	return true
 end

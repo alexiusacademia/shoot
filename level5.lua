@@ -48,6 +48,7 @@ local scHeight = display.contentHeight
 local centerX = display.contentCenterX
 local centerY = display.contentCenterY
 local maxStretch
+local ballRadius
 -- 4] Sounds
 local bounceSound
 local failedSound
@@ -84,11 +85,11 @@ local function showBall()
   origX = centerX
   origY = scHeight*.8
   
-  local radius = scWidth*0.05
+  ballRadius = scWidth*0.05
   
-	ball = display.newCircle( origX, origY, radius )
+	ball = display.newCircle( origX, origY, ballRadius )
 	ball:setFillColor( 0, 0, 0 )
-	physics.addBody( ball, "dynamic", {density=2, radius=radius, bounce=0.5, 	friction=frictionValue} )
+	physics.addBody( ball, "dynamic", {density=2, radius=ballRadius, bounce=0.5, 	friction=frictionValue} )
 	ball.myName = "ball"
 end
 
@@ -108,8 +109,8 @@ local function showObstacles()
   local obstacleWidth = scWidth * 0.6
   local obstacleHeight = 10
   
-  obs1 = display.newRect( display.contentCenterX, display.contentCenterY+100, obstacleWidth, obstacleHeight )
-  obs1:setFillColor(0.5)
+  --obs1 = display.newRect( display.contentCenterX, display.contentCenterY+100, obstacleWidth, obstacleHeight )
+  --obs1:setFillColor(0.5)
   
   obs2 = display.newRect( display.contentCenterX, display.contentCenterY-100, obstacleWidth, obstacleHeight )
   obs2:setFillColor(0.5)
@@ -117,7 +118,7 @@ local function showObstacles()
   obs3 = display.newRect( display.contentCenterX, display.contentCenterY, obstacleWidth, obstacleHeight )
   obs3:setFillColor(0.5)
 
-  physics.addBody( obs1, "static", {friction=frictionValue} )
+  --physics.addBody( obs1, "static", {friction=frictionValue} )
   physics.addBody( obs2, "static", {friction=frictionValue} )
   physics.addBody( obs3, "static", {friction=frictionValue} )
 end
@@ -256,10 +257,22 @@ local function onDrag( event )
 		-- Set touch focus on the ball
 		display.currentStage:setFocus( ball )
 		-- Store initial offset position
-		ball.touchOffsetX = event.x - ball.x
-		ball.touchOffsetY = event.y - ball.y
+		if ((event.x - ball.x) ~= nil or (event.y - ball.y) ~= nil) then
+      ball.touchOffsetX = event.x - ball.x
+      ball.touchOffsetY = event.y - ball.y
+    else
+      ball.touchOffsetX = 0
+      ball.touchOffsetY = 0
+    end
 	elseif ( phase == "moved" ) then
     -- Get the event location
+    if (getDistance(origX, origY, event.x, event.y) > ballRadius) then
+      ball.touchOffsetX = 0
+      ball.touchOffsetY = 0
+    else
+      ball.touchOffsetX = event.x - ball.x
+      ball.touchOffsetY = event.y - ball.y
+    end
     local newX = event.x - ball.touchOffsetX
     local newY = event.y - ball.touchOffsetY
     
